@@ -3,6 +3,8 @@ using System.IO;
 using System.Configuration;
 using System.Text.RegularExpressions;
 
+using TwitchBot.CommandManagerPackage;
+
 namespace TwitchBot
 {
     class Program
@@ -18,6 +20,8 @@ namespace TwitchBot
 
             //join channel
             irc.JoinRoom("voxdavis");
+
+            CommandManager.AddCommand("!test", "This is a test.", (message) => { irc.sentChatMessage("test!"); });
 
             //TODO: gross, change!
             while (true)
@@ -48,6 +52,10 @@ namespace TwitchBot
 
         private static void handleCommand(string username, string message)
         {
+            Regex r = new Regex(@"!\w+");
+            CommandManager.RunCommand(r.Match(message).Value, message);
+
+
             if (message == "!hype")
             {
                 irc.sentChatMessage("@" + username + " HYPE HYPE HYPE!!!! at " + DateTime.Now.ToLongTimeString());
@@ -59,7 +67,7 @@ namespace TwitchBot
             }
             else if(message.StartsWith("!name"))
             {
-                Regex r = new Regex(@"!name @[\w_\-]+");
+                r = new Regex(@"!name @[\w_\-]+");
 
                 if (r.IsMatch(message))
                 {
