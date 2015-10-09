@@ -2,16 +2,17 @@
 using System.IO;
 using System.Configuration;
 using System.Text.RegularExpressions;
-
 using TwitchBot.CommandManagerPackage;
 
 namespace TwitchBot
 {
     class Program
     {
+        private static bool _testMode = true;
         private static IrcClient irc;
         static void Main(string[] args)
         {
+            bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
             string password = ConfigurationManager.AppSettings["oauth"];
 
             //password from www.twitchapps.com/tmi
@@ -23,19 +24,35 @@ namespace TwitchBot
 
             CommandManager.AddCommand("!test", "This is a test.", (message) => { irc.sentChatMessage("test!"); });
 
-            //TODO: gross, change!
-            while (true)
+            if(_testMode)
             {
-                string message = irc.readMessage();
-                if (message == null || message.Length == 0) continue;
-
-                Console.WriteLine(message);
-                                
-                if (message.IndexOf("!") >= 0)
+                while (true)
                 {
-                    handleChatMessage(message);
+                    string message = irc.readMessage();
+                    if (message == null || message.Length == 0) continue;
+
+                    if (message[0] == '!')
+                    {
+                        handleCommand("TestUser", message);
+                    }
                 }
             }
+            else
+            {
+                while (true)
+                {
+                    string message = irc.readMessage();
+                    if (message == null || message.Length == 0) continue;
+
+                    Console.WriteLine(message);
+
+                    if (message.IndexOf("!") >= 0)
+                    {
+                        handleChatMessage(message);
+                    }
+                }
+            }
+
         }
 
         private static void handleChatMessage(string message)
@@ -48,7 +65,6 @@ namespace TwitchBot
             {
                 handleCommand(username, message);
             }
-
         }
 
         private static void handleCommand(string username, string message)
@@ -59,7 +75,7 @@ namespace TwitchBot
 
             if (message == "!hype")
             {
-                irc.sentChatMessage("@" + username + " HYPE HYPE HYPE!!!! at " + DateTime.Now.ToLongTimeString());
+                irc.sentChatMessage("HYPE HYPE HYPE!!!!");
             }
             else if (message == "!name")
             {
