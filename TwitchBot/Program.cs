@@ -22,7 +22,23 @@ namespace TwitchBot
             //join channel
             irc.JoinRoom("voxdavis");
 
-            CommandManager.AddCommand("!test", "This is a test.", (message) => { irc.sentChatMessage("test!"); });
+            CommandManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
+            CommandManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) => 
+            {
+                Regex r = new Regex(@"!name @[\w_\-]+");
+                NameGenerator ng = new NameGenerator();
+
+                if (r.IsMatch(message))
+                {
+                    string u = message.Substring(7);
+                    return u + "'s new name is " + ng.GetName();
+                }
+                else
+                {
+                    return ng.GetName(); 
+                }
+                
+            });
 
             if(_testMode)
             {
@@ -67,32 +83,16 @@ namespace TwitchBot
             }
         }
 
+        /// <summary>
+        /// Assumes that message starts with a command
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="message"></param>
         private static void handleCommand(string username, string message)
         {
-            Regex r = new Regex(@"!\w+");
-            CommandManager.RunCommand(r.Match(message).Value, message);
+            Regex r = new Regex(@"^!\w+");
+            irc.sentChatMessage(CommandManager.RunCommand(r.Match(message).Value, message));
 
-
-            if (message == "!hype")
-            {
-                irc.sentChatMessage("HYPE HYPE HYPE!!!!");
-            }
-            else if (message == "!name")
-            {
-                NameGenerator ng = new NameGenerator();
-                irc.sentChatMessage(ng.GetName());
-            }
-            else if(message.StartsWith("!name"))
-            {
-                r = new Regex(@"!name @[\w_\-]+");
-
-                if (r.IsMatch(message))
-                {
-                    NameGenerator ng = new NameGenerator();
-                    string u = message.Substring(7);
-                    irc.sentChatMessage(u + "'s new name is " + ng.GetName());
-                }
-            }
         }
 
     }
