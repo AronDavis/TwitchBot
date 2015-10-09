@@ -23,6 +23,8 @@ namespace TwitchBot
 
             CommandManager.AddCommand("!test", "This is a test.", (message) => { irc.sentChatMessage("test!"); });
 
+            //irc.sendIrcMessage("PING");
+
             //TODO: gross, change!
             while (true)
             {
@@ -34,6 +36,10 @@ namespace TwitchBot
                 if (message.IndexOf("!") >= 0)
                 {
                     handleChatMessage(message);
+                }
+                else if(message.StartsWith("PING"))
+                {
+                    irc.sendIrcMessage("PONG");
                 }
             }
         }
