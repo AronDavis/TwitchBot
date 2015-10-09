@@ -27,9 +27,10 @@ namespace TwitchBot
             while (true)
             {
                 string message = irc.readMessage();
+                if (message == null || message.Length == 0) continue;
 
                 Console.WriteLine(message);
-
+                                
                 if (message.IndexOf("!") >= 0)
                 {
                     handleChatMessage(message);

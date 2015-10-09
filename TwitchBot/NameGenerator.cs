@@ -23,8 +23,13 @@ namespace TwitchBot
         public string GetName()
         {
             int syllables = random.Next(minSyllables, maxSyllables+1);
+            return GetName(syllables);
+        }
+
+        public string GetName(int syllables)
+        {
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < syllables; i++)
+            for (int i = 0; i < syllables; i++)
             {
                 sb.Append(consonants[random.Next(0, consonants.Length)]);
                 sb.Append(vowels[random.Next(0, vowels.Length)]);
