@@ -10,12 +10,12 @@ namespace TwitchBot.CommandManagerPackage
     {
         static Dictionary<string, Command> Commands = new Dictionary<string, Command>();
 
-        public static void RunCommand(string key, string message)
+        public static string RunCommand(string key, string message)
         {
             //if we can't find the key, abort
-            if (!Commands.ContainsKey(key)) return;
+            if (!Commands.ContainsKey(key)) return "";
 
-            Commands[key].ProcessCommand(message);
+            return Commands[key].ProcessCommand(message);
         }
 
         public static bool AddCommand(string name, string helpText, Command.MessageAction processCommand)

@@ -12,7 +12,7 @@ namespace TwitchBot
         private int minSyllables = 2;
         private int maxSyllables = 4;
 
-        private string[] consonants = new string[] { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "qu", "r", "s", "t", "v", "w", "x", "y", "z" };
+        private string[] consonants = new string[] { "b", "c", "ch", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "qu", "r", "s", "t", "v", "w", "x", "y", "z" };
         private string[] vowels = new string[] { "a", "e", "i", "o", "u" };
 
         public NameGenerator()

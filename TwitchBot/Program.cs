@@ -2,16 +2,17 @@
 using System.IO;
 using System.Configuration;
 using System.Text.RegularExpressions;
-
 using TwitchBot.CommandManagerPackage;
 
 namespace TwitchBot
 {
     class Program
     {
+        private static bool _testMode = true;
         private static IrcClient irc;
         static void Main(string[] args)
         {
+            bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
             string password = ConfigurationManager.AppSettings["oauth"];
 
             //password from www.twitchapps.com/tmi
@@ -21,11 +22,39 @@ namespace TwitchBot
             //join channel
             irc.JoinRoom("voxdavis");
 
-            CommandManager.AddCommand("!test", "This is a test.", (message) => { irc.sentChatMessage("test!"); });
+            CommandManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
+            CommandManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) => 
+            {
+                Regex r = new Regex(@"!name @[\w_\-]+");
+                NameGenerator ng = new NameGenerator();
 
-            //irc.sendIrcMessage("PING");
+                if (r.IsMatch(message))
+                {
+                    string u = message.Substring(7);
+                    return u + "'s new name is " + ng.GetName();
+                }
+                else
+                {
+                    return ng.GetName(); 
+                }
+                
+            });
 
-            //TODO: gross, change!
+            if(_testMode)
+            {
+                while (true)
+                {
+                    string message = irc.readMessage();
+                    if (message == null || message.Length == 0) continue;
+
+                    if (message[0] == '!')
+                    {
+                        handleCommand("TestUser", message);
+                    }
+                }
+            }
+            else
+            {
             while (true)
             {
                 string message = irc.readMessage();
@@ -42,6 +71,8 @@ namespace TwitchBot
                     irc.sendIrcMessage("PONG");
                 }
             }
+            }
+
         }
 
         private static void handleChatMessage(string message)
@@ -54,35 +85,18 @@ namespace TwitchBot
             {
                 handleCommand(username, message);
             }
-
         }
 
+        /// <summary>
+        /// Assumes that message starts with a command
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="message"></param>
         private static void handleCommand(string username, string message)
         {
-            Regex r = new Regex(@"!\w+");
-            CommandManager.RunCommand(r.Match(message).Value, message);
+            Regex r = new Regex(@"^!\w+");
+            irc.sentChatMessage(CommandManager.RunCommand(r.Match(message).Value, message));
 
-
-            if (message == "!hype")
-            {
-                irc.sentChatMessage("@" + username + " HYPE HYPE HYPE!!!! at " + DateTime.Now.ToLongTimeString());
-            }
-            else if (message == "!name")
-            {
-                NameGenerator ng = new NameGenerator();
-                irc.sentChatMessage(ng.GetName());
-            }
-            else if(message.StartsWith("!name"))
-            {
-                r = new Regex(@"!name @[\w_\-]+");
-
-                if (r.IsMatch(message))
-                {
-                    NameGenerator ng = new NameGenerator();
-                    string u = message.Substring(7);
-                    irc.sentChatMessage(u + "'s new name is " + ng.GetName());
-                }
-            }
         }
 
     }

@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
+using System.Configuration;
 
 namespace TwitchBot
 {
     class IrcClient
     {
+        private bool _testMode = true;
         private string username;
         private string channel;
 
@@ -21,10 +23,20 @@ namespace TwitchBot
 
         public IrcClient(string ip, int port, string username, string password)
         {
+            bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
+
             this.username = username;
-            tcpClient = new TcpClient(ip, port);
-            inputStream = new StreamReader(tcpClient.GetStream());
-            outputStream = new StreamWriter(tcpClient.GetStream());
+            if(!_testMode)
+            {
+                tcpClient = new TcpClient(ip, port);
+                inputStream = new StreamReader(tcpClient.GetStream());
+                outputStream = new StreamWriter(tcpClient.GetStream());
+            }
+            else
+            {
+                inputStream = new StreamReader(Console.OpenStandardInput());
+                outputStream = new StreamWriter(Console.OpenStandardOutput());
+            }
 
             //TODO: lookup why
             //this is just what the server is expecting
