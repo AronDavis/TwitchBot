@@ -3,6 +3,7 @@ using System.IO;
 using System.Configuration;
 using System.Text.RegularExpressions;
 using TwitchBot.CommandManagerPackage;
+using System.Media;
 
 namespace TwitchBot
 {
@@ -40,7 +41,7 @@ namespace TwitchBot
                 
             });
 
-            if(_testMode)
+            if (_testMode)
             {
                 while (true)
                 {
@@ -55,24 +56,34 @@ namespace TwitchBot
             }
             else
             {
-            while (true)
-            {
-                string message = irc.readMessage();
-                if (message == null || message.Length == 0) continue;
+                while (true)
+                {
+                    string message = irc.readMessage();
+                    if (message == null || message.Length == 0) continue;
 
-                Console.WriteLine(message);
+                    Console.WriteLine(message);
                                 
-                if (message.IndexOf("!") >= 0)
-                {
-                    handleChatMessage(message);
+                    if (message.IndexOf("!") >= 0)
+                    {
+                        handleChatMessage(message);
+                        playChatSound();
+                    }
+                    else if(message.StartsWith("PING"))
+                    {
+                        irc.sendIrcMessage("PONG");
+                    }
+                    else playChatSound();
                 }
-                else if(message.StartsWith("PING"))
-                {
-                    irc.sendIrcMessage("PONG");
-                }
-            }
             }
 
+        }
+
+        private static void playChatSound()
+        {
+            SoundPlayer player = new SoundPlayer();
+            player.SoundLocation = @"PointBrick-Explosion.wav";
+            player.Play();
+            player.Dispose();
         }
 
         private static void handleChatMessage(string message)
