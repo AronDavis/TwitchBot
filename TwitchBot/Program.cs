@@ -1,9 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Configuration;
 using System.Text.RegularExpressions;
 using TwitchBot.CommandManagerPackage;
-using System.Media;
 
 namespace TwitchBot
 {
@@ -24,7 +22,7 @@ namespace TwitchBot
             irc.JoinRoom("voxdavis");
 
             CommandManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
-            CommandManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) => 
+            CommandManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) =>
             {
                 Regex r = new Regex(@"!name @[\w_\-]+");
                 NameGenerator ng = new NameGenerator();
@@ -36,10 +34,12 @@ namespace TwitchBot
                 }
                 else
                 {
-                    return ng.GetName(); 
+                    return ng.GetName();
                 }
-                
+
             });
+            CommandManager.AddCommand("!source", "Gets a link to the source code!", (message) => { return @"https://github.com/AronDavis/TwitchBot"; });
+
 
             if (_testMode)
             {
@@ -62,28 +62,11 @@ namespace TwitchBot
                     if (message == null || message.Length == 0) continue;
 
                     Console.WriteLine(message);
-                                
-                    if (message.IndexOf("!") >= 0)
-                    {
-                        handleChatMessage(message);
-                        playChatSound();
-                    }
-                    else if(message.StartsWith("PING"))
-                    {
-                        irc.sendIrcMessage("PONG");
-                    }
-                    else playChatSound();
+
+                    if (message.IndexOf("!") >= 0) handleChatMessage(message);
+                    else if (message.StartsWith("PING")) irc.sendIrcMessage("PONG");
                 }
             }
-
-        }
-
-        private static void playChatSound()
-        {
-            SoundPlayer player = new SoundPlayer();
-            player.SoundLocation = @"PointBrick-Explosion.wav";
-            player.Play();
-            player.Dispose();
         }
 
         private static void handleChatMessage(string message)
