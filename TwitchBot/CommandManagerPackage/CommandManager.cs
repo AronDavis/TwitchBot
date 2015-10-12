@@ -13,7 +13,7 @@ namespace TwitchBot.CommandManagerPackage
         public static string RunCommand(string key, string message)
         {
             //if we can't find the key, abort
-            if (!Commands.ContainsKey(key)) return "";
+            if (!Commands.ContainsKey(key)) return null;
 
             return Commands[key].ProcessCommand(message);
         }

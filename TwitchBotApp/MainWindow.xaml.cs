@@ -118,8 +118,12 @@ namespace TwitchBotApp
         {
             Regex r = new Regex(@"^!\w+");
             string returnMessage = ComManager.RunCommand(r.Match(message).Value, message);
-            irc.sendChatMessage(returnMessage);
-            UpdateChatDisplay("MrSheila", returnMessage, Colors.Blue);
+
+            if (!String.IsNullOrEmpty(returnMessage))
+            {
+                irc.sendChatMessage(returnMessage);
+                UpdateChatDisplay("MrSheila", returnMessage, Colors.Blue);
+            }
         }
 
         delegate void updateChatDelegate(string user, string message, Color color);
