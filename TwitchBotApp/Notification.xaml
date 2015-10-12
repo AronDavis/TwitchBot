@@ -9,7 +9,7 @@
         Topmost="True">
     <Grid>
         <Button x:Name="btnClose" Content="X" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="20" Click="btnClose_Click"/>
-        <RichTextBox x:Name="richTextBox" Height="100" Margin="10,40,10,0" VerticalAlignment="Top" IsReadOnly="True">
+        <RichTextBox x:Name="txtMessage" Height="100" Margin="10,40,10,0" VerticalAlignment="Top" IsReadOnly="True">
             <FlowDocument>
                 <Paragraph>
                     <Run Text=""/>

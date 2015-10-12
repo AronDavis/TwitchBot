@@ -85,7 +85,7 @@ namespace TwitchBotApp
 
                 Message message = new Message(incoming);
 
-                if (message.Username != null) handleChatMessage(message);
+                if (message.Username != null && message.Text.Length > 0) handleChatMessage(message);
                 else if (message.Text.StartsWith("PING")) irc.SendIrcMessage("PONG");
             }
         }
@@ -118,30 +118,43 @@ namespace TwitchBotApp
             }
         }
 
-        public void UpdateChatDisplay(Message messagee, Color color)
+        public void UpdateChatDisplay(Message message, Color color)
         {
             if (txtChat.Dispatcher.CheckAccess())
             {
-                // Create a paragraph with text
-                Paragraph para = new Paragraph();
-                para.Margin = new Thickness(0);
-
-                Run runUsername = new Run(messagee.Username + ": ");
-                runUsername.Foreground = new SolidColorBrush(color);
-
-                Run runMessage = new Run(messagee.Text);
-
-                para.Inlines.Add(runUsername);
-                para.Inlines.Add(runMessage);
-
-                // Add the paragraph
-                txtChat.Document.Blocks.Add(para);
+                // Add  paragraph
+                txtChat.Document.Blocks.Add(MessageToParagraph(message, color));
                 txtChat.ScrollToEnd();
             }
             else
             {
-                txtChat.Dispatcher.Invoke(() => UpdateChatDisplay(messagee, color));
+                txtChat.Dispatcher.Invoke(() => UpdateChatDisplay(message, color));
             }
+        }
+
+        public Paragraph MessageToParagraph(Message message, Color color)
+        {
+            // Create a paragraph with text
+            Paragraph para = new Paragraph();
+            para.Margin = new Thickness(0);
+
+            if (message.Username != null)
+            {
+                Run runUsername = new Run(message.Username + ": ");
+                runUsername.Foreground = new SolidColorBrush(color);
+
+                Run runMessage = new Run(message.Text);
+
+                para.Inlines.Add(runUsername);
+                para.Inlines.Add(runMessage);
+            }
+            else
+            {
+                Bold boldMessage = new Bold(new Run(message.Text));
+                para.Inlines.Add(boldMessage);
+            }
+
+            return para;
         }
 
         private void SendMessageFromApp() //TODO: as bot
@@ -169,10 +182,10 @@ namespace TwitchBotApp
             {
                 if (IsWindowOpen<Notification>())
                 {
-                    notification.lblTitle.Content = message.Text;
-                    notification.Opacity = 1;
+                    notification.AppendMessage(MessageToParagraph(message, Colors.Red));
+                    notification.lblTitle.Content = "Message received at " + DateTime.Now.ToShortTimeString();
                 }
-                else notification = new Notification(message.Text);
+                else notification = new Notification("Message received at " + DateTime.Now.ToShortTimeString(), MessageToParagraph(message, Colors.Red));
 
                 notification.Show();
             }

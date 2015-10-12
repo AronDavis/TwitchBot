@@ -21,7 +21,7 @@ namespace TwitchBotApp
     /// </summary>
     public partial class Notification : Window
     {
-        public Notification(string title)
+        public Notification(string title, Paragraph message)
         {
             InitializeComponent();
 
@@ -30,8 +30,23 @@ namespace TwitchBotApp
             Left = desktopWorkingArea.Right - Width;
             Top = desktopWorkingArea.Bottom - Height;
 
+            //set title
             lblTitle.Content = title;
+
+            //set message
+            txtMessage.Document.Blocks.Clear();
+            txtMessage.Document.Blocks.Add(message);
+            txtMessage.ScrollToEnd();
+
+            
             ShowActivated = false;
+        }
+
+        public void AppendMessage(Paragraph additionalText)
+        {
+            txtMessage.Document.Blocks.Add(additionalText);
+            txtMessage.ScrollToEnd();
+            Opacity = 1;
         }
 
         DispatcherTimer fadeTimer = new DispatcherTimer();
