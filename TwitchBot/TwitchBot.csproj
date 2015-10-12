@@ -44,6 +44,7 @@
     <Compile Include="CommandManagerPackage\Command.cs" />
     <Compile Include="CommandManagerPackage\CommandManager.cs" />
     <Compile Include="IrcClient.cs" />
+    <Compile Include="Message.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

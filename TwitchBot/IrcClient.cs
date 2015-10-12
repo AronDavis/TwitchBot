@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Configuration;
+using System.Threading;
 
 namespace TwitchBot
 {
@@ -18,6 +19,7 @@ namespace TwitchBot
         private TcpClient tcpClient;
         private StreamReader inputStream;
         private StreamWriter outputStream;
+        private Queue<string> consoleInput = new Queue<string>();
 
         public IrcClient(string ip, int port, string username, string password)
         {
@@ -52,15 +54,15 @@ namespace TwitchBot
             outputStream.Flush();
         }
 
-        public void sendIrcMessage(string message)
+        public void SendIrcMessage(string message)
         {
             outputStream.WriteLine(message);
             outputStream.Flush();
         }
 
-        public void sendChatMessage(string message)
+        public void SendChatMessage(string message)
         {
-            sendIrcMessage(":" + username + "!" + username + "@" + username 
+            SendIrcMessage(":" + username + "!" + username + "@" + username 
                 + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message);
         }
 
@@ -70,17 +72,15 @@ namespace TwitchBot
                 + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message;
         }
 
-        public void Input(string message)
+        public void ConsoleInput(string message)
         {
-            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(message);
-            inputStream.BaseStream.Write(bytes, 0, bytes.Length);
-            inputStream.BaseStream.Flush();
+            consoleInput.Enqueue(message);
         }
 
-        public string readMessage()
+        public string ReadMessage()
         {
-            string message = inputStream.ReadLine(); //NOTE: gets error when not connected to internet?
-            return message;
+            if (consoleInput.Count > 0) return consoleInput.Dequeue();
+            return inputStream.ReadLine(); //NOTE: gets error when not connected to internet?
         }
     }
 }

@@ -51,20 +51,13 @@ namespace TwitchBotApp
             bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
             string password = ConfigurationManager.AppSettings["oauth"];
 
-            if (_testMode)
-            {
-                irc = new IrcClient();
-            }
-            else
-            {
-                //password from www.twitchapps.com/tmi
-                //include the "oauth:" portion
-                irc = new IrcClient("irc.twitch.tv", 6667, "mrsheila", password);
-            }
+            if (_testMode) irc = new IrcClient();
+            else irc = new IrcClient("irc.twitch.tv", 6667, "mrsheila", password); //password from www.twitchapps.com/tmi
 
             //join channel
             irc.JoinRoom("voxdavis");
 
+            //Add commands
             ComManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
             ComManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) =>
             {
@@ -87,25 +80,23 @@ namespace TwitchBotApp
 
             while (true)
             {
-                string message = irc.readMessage();
-                if (message == null || message.Length == 0) continue;
+                string incoming = irc.ReadMessage();
+                if (incoming == null || incoming.Length == 0) continue;
 
-                if (message.IndexOf("!") >= 0) handleChatMessage(message);
-                else if (message.StartsWith("PING")) irc.sendIrcMessage("PONG");
+                Message message = new Message(incoming);
+
+                if (message.Username != null) handleChatMessage(message);
+                else if (message.Text.StartsWith("PING")) irc.SendIrcMessage("PONG");
             }
         }
 
-        private void handleChatMessage(string message)
+        private void handleChatMessage(Message message)
         {
-            string username = message.Substring(1, message.IndexOf("!") - 1);
-            message = message.Substring(message.IndexOf(":") + 1);
-            message = message.Substring(message.IndexOf(":") + 1);
-
-            UpdateChatDisplay(username, message, Colors.Red);
-            showNotification(message); //TODO: fix this method
-            if (message[0] == '!')
+            UpdateChatDisplay(message, Colors.Red);
+            showNotification(message);
+            if (message.Text[0] == '!')
             {
-                handleCommand(username, message);
+                handleCommand(message);
             }
         }
 
@@ -114,20 +105,20 @@ namespace TwitchBotApp
         /// </summary>
         /// <param name="username"></param>
         /// <param name="message"></param>
-        private void handleCommand(string username, string message)
+        private void handleCommand(Message message)
         {
             Regex r = new Regex(@"^!\w+");
-            string returnMessage = ComManager.RunCommand(r.Match(message).Value, message);
+            string returnMessage = ComManager.RunCommand(r.Match(message.Text).Value, message.Text);
 
             if (!String.IsNullOrEmpty(returnMessage))
             {
-                irc.sendChatMessage(returnMessage);
-                UpdateChatDisplay("MrSheila", returnMessage, Colors.Blue);
+                irc.SendChatMessage(returnMessage);
+
+                UpdateChatDisplay(new Message(irc.GenerateChatMessage("MrSheila", returnMessage)), Colors.Blue);
             }
         }
 
-        delegate void updateChatDelegate(string user, string message, Color color);
-        public void UpdateChatDisplay(string user, string message, Color color)
+        public void UpdateChatDisplay(Message messagee, Color color)
         {
             if (txtChat.Dispatcher.CheckAccess())
             {
@@ -135,10 +126,10 @@ namespace TwitchBotApp
                 Paragraph para = new Paragraph();
                 para.Margin = new Thickness(0);
 
-                Run runUsername = new Run(user + ": ");
+                Run runUsername = new Run(messagee.Username + ": ");
                 runUsername.Foreground = new SolidColorBrush(color);
 
-                Run runMessage = new Run(message);
+                Run runMessage = new Run(messagee.Text);
 
                 para.Inlines.Add(runUsername);
                 para.Inlines.Add(runMessage);
@@ -149,16 +140,16 @@ namespace TwitchBotApp
             }
             else
             {
-                updateChatDelegate updater = new updateChatDelegate(UpdateChatDisplay);
-                txtChat.Dispatcher.Invoke(updater, user, message, color);
+                txtChat.Dispatcher.Invoke(() => UpdateChatDisplay(messagee, color));
             }
         }
 
-        private void SendMessageFromApp()
+        private void SendMessageFromApp() //TODO: as bot
         {
             string message = txtSend.Text;
-            irc.sendChatMessage(message);
-            UpdateChatDisplay("MrSheila", message, Colors.Blue);
+            irc.SendChatMessage(message);
+
+            UpdateChatDisplay(new Message(irc.GenerateChatMessage("MrSheila", message)), Colors.Blue);
             txtSend.Clear();
         }
 
@@ -172,20 +163,20 @@ namespace TwitchBotApp
             if(e.Key == Key.Enter) SendMessageFromApp();
         }
 
-        private void showNotification(string title)
+        private void showNotification(Message message)
         {
             if (Application.Current.Dispatcher.CheckAccess())
             {
                 if (IsWindowOpen<Notification>())
                 {
-                    notification.lblTitle.Content = title;
+                    notification.lblTitle.Content = message.Text;
                     notification.Opacity = 1;
                 }
-                else notification = new Notification(title);
+                else notification = new Notification(message.Text);
 
                 notification.Show();
             }
-            else Application.Current.Dispatcher.Invoke(() => showNotification(title));
+            else Application.Current.Dispatcher.Invoke(() => showNotification(message));
         }
 
         public static bool IsWindowOpen<T>(string name = null) where T : Window
@@ -218,8 +209,7 @@ namespace TwitchBotApp
         private void WriteToStreamAsInput()
         {
             string message = txtConsole.Text;
-            irc.Input(irc.GenerateChatMessage("VoxDavis", message));
-            //testWriter.WriteLine(irc.GenerateChatMessage("VoxDavis", message));
+            irc.ConsoleInput(irc.GenerateChatMessage("VoxDavis", message));
             txtConsole.Clear();
         }
     }
