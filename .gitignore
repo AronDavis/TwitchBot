@@ -6,6 +6,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.config
 
 # Build results
 [Dd]ebug/
@@ -229,4 +230,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-*.config
