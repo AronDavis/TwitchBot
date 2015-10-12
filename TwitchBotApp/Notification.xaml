@@ -1,0 +1,21 @@
+﻿<Window x:Class="TwitchBotApp.Notification"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TwitchBotApp"
+        mc:Ignorable="d"
+        Title="Notification" Height="150" Width="300" Loaded="Window_Loaded" AllowsTransparency="True" WindowStyle="None" MouseEnter="Window_MouseEnter" MouseLeave="Window_MouseLeave" LostFocus="Window_LostFocus"
+        Topmost="True">
+    <Grid>
+        <Button x:Name="btnClose" Content="X" HorizontalAlignment="Left" Margin="270,10,0,0" VerticalAlignment="Top" Width="20" Click="btnClose_Click"/>
+        <RichTextBox x:Name="richTextBox" Height="100" Margin="10,40,10,0" VerticalAlignment="Top" IsReadOnly="True">
+            <FlowDocument>
+                <Paragraph>
+                    <Run Text=""/>
+                </Paragraph>
+            </FlowDocument>
+        </RichTextBox>
+        <Label x:Name="lblTitle" Content="Title" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="255"/>
+    </Grid>
+</Window>

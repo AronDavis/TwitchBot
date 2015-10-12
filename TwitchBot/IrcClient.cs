@@ -10,7 +10,7 @@ using System.Configuration;
 
 namespace TwitchBot
 {
-    class IrcClient
+    public class IrcClient
     {
         private bool _testMode = true;
         private string username;
@@ -19,7 +19,6 @@ namespace TwitchBot
         private TcpClient tcpClient;
         private StreamReader inputStream;
         private StreamWriter outputStream;
-
 
         public IrcClient(string ip, int port, string username, string password)
         {
@@ -38,7 +37,6 @@ namespace TwitchBot
                 outputStream = new StreamWriter(Console.OpenStandardOutput());
             }
 
-            //TODO: lookup why
             //this is just what the server is expecting
             //creates the connection
             //connects to server, but not any specific channel yet
@@ -50,7 +48,7 @@ namespace TwitchBot
 
         public void JoinRoom(string channel)
         {
-            //TODO: oh god this is ugly, fix!!!
+            //assume we're only working with one channel for now
             this.channel = channel;
             outputStream.WriteLine("JOIN #" + channel);
             outputStream.Flush();
@@ -60,10 +58,6 @@ namespace TwitchBot
         {
             outputStream.WriteLine(message);
             outputStream.Flush();
-
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine(message);
-            Console.ForegroundColor = ConsoleColor.White;
         }
 
         public void sentChatMessage(string message)
@@ -74,7 +68,7 @@ namespace TwitchBot
 
         public string readMessage()
         {
-            string message = inputStream.ReadLine();
+            string message = inputStream.ReadLine(); //NOTE: gets error when not connected to internet?
             return message;
         }
     }
