@@ -31,6 +31,7 @@ namespace TwitchBotApp
             Top = desktopWorkingArea.Bottom - Height;
 
             lblTitle.Content = title;
+            ShowActivated = false;
         }
 
         DispatcherTimer fadeTimer = new DispatcherTimer();
