@@ -89,8 +89,7 @@ namespace TwitchBot
         private static void handleCommand(string username, string message)
         {
             Regex r = new Regex(@"^!\w+");
-            irc.sentChatMessage(CommandManager.RunCommand(r.Match(message).Value, message));
-
+            irc.sendChatMessage(CommandManager.RunCommand(r.Match(message).Value, message));
         }
 
     }

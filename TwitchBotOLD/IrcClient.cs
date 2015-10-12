@@ -66,10 +66,16 @@ namespace TwitchBot
             Console.ForegroundColor = ConsoleColor.White;
         }
 
-        public void sentChatMessage(string message)
+        public void sendChatMessage(string message)
         {
             sendIrcMessage(":" + username + "!" + username + "@" + username 
                 + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message);
+        }
+
+        public string GenerateChatMessage(string username, string message)
+        {
+            return ":" + username + "!" + username + "@" + username
+                + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message;
         }
 
         public string readMessage()

@@ -12,7 +12,6 @@ namespace TwitchBot
 {
     public class IrcClient
     {
-        private bool _testMode = true;
         private string username;
         private string channel;
 
@@ -22,20 +21,10 @@ namespace TwitchBot
 
         public IrcClient(string ip, int port, string username, string password)
         {
-            bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
-
             this.username = username;
-            if(!_testMode)
-            {
-                tcpClient = new TcpClient(ip, port);
-                inputStream = new StreamReader(tcpClient.GetStream());
-                outputStream = new StreamWriter(tcpClient.GetStream());
-            }
-            else
-            {
-                inputStream = new StreamReader(Console.OpenStandardInput());
-                outputStream = new StreamWriter(Console.OpenStandardOutput());
-            }
+            tcpClient = new TcpClient(ip, port);
+            inputStream = new StreamReader(tcpClient.GetStream());
+            outputStream = new StreamWriter(tcpClient.GetStream());
 
             //this is just what the server is expecting
             //creates the connection
@@ -44,6 +33,15 @@ namespace TwitchBot
             outputStream.WriteLine("NICK " + username);
             outputStream.WriteLine("USER " + username + " 8 *:" + username);
             outputStream.Flush();
+        }
+
+        /// <summary>
+        /// Use this for testing.
+        /// </summary>
+        public IrcClient()
+        {
+            inputStream = new StreamReader(new MemoryStream());
+            outputStream = new StreamWriter(new MemoryStream());
         }
 
         public void JoinRoom(string channel)
@@ -60,10 +58,23 @@ namespace TwitchBot
             outputStream.Flush();
         }
 
-        public void sentChatMessage(string message)
+        public void sendChatMessage(string message)
         {
             sendIrcMessage(":" + username + "!" + username + "@" + username 
                 + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message);
+        }
+
+        public string GenerateChatMessage(string username, string message)
+        {
+            return ":" + username + "!" + username + "@" + username
+                + ".tmi.twitch.tv PRIVMSG #" + channel + " :" + message;
+        }
+
+        public void Input(string message)
+        {
+            byte[] bytes = System.Text.Encoding.ASCII.GetBytes(message);
+            inputStream.BaseStream.Write(bytes, 0, bytes.Length);
+            inputStream.BaseStream.Flush();
         }
 
         public string readMessage()

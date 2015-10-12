@@ -19,5 +19,7 @@
         </RichTextBox>
         <TextBox x:Name="txtSend" Height="23" Margin="10,116,96.4,0" TextWrapping="Wrap" VerticalAlignment="Top" KeyDown="txtSend_KeyDown"/>
         <Button x:Name="btnSend" Content="Send" Margin="0,116,10.4,0" VerticalAlignment="Top" Height="23" Click="btnSend_Click" HorizontalAlignment="Right" Width="81"/>
+        <TextBox x:Name="txtConsole" Margin="10,0,96,10" TextWrapping="Wrap" Background="Black" Foreground="#FF00FF17" KeyDown="txtConsole_KeyDown" Height="23" VerticalAlignment="Bottom"/>
+        <Button x:Name="btnConsoleSend" Content="Send" Margin="0,0,10,10" Click="btnConsoleSend_Click" HorizontalAlignment="Right" Width="81" Height="23" VerticalAlignment="Bottom"/>
     </Grid>
 </Window>

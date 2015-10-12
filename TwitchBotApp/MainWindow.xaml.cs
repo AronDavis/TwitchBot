@@ -20,6 +20,8 @@ using TwitchBot;
 using TwitchBot.CommandManagerPackage;
 using ComManager = TwitchBot.CommandManagerPackage.CommandManager;
 using NameGeneratorPackage;
+using System.IO;
+using System.Diagnostics;
 
 namespace TwitchBotApp
 {
@@ -49,9 +51,16 @@ namespace TwitchBotApp
             bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
             string password = ConfigurationManager.AppSettings["oauth"];
 
-            //password from www.twitchapps.com/tmi
-            //include the "oauth:" portion
-            irc = new IrcClient("irc.twitch.tv", 6667, "mrsheila", password);
+            if (_testMode)
+            {
+                irc = new IrcClient();
+            }
+            else
+            {
+                //password from www.twitchapps.com/tmi
+                //include the "oauth:" portion
+                irc = new IrcClient("irc.twitch.tv", 6667, "mrsheila", password);
+            }
 
             //join channel
             irc.JoinRoom("voxdavis");
@@ -76,31 +85,13 @@ namespace TwitchBotApp
             ComManager.AddCommand("!source", "Gets a link to the source code!", (message) => { return @"https://github.com/AronDavis/TwitchBot"; });
 
 
-            if (_testMode)
+            while (true)
             {
-                while (true)
-                {
-                    string message = irc.readMessage();
-                    if (message == null || message.Length == 0) continue;
+                string message = irc.readMessage();
+                if (message == null || message.Length == 0) continue;
 
-                    if (message[0] == '!')
-                    {
-                        handleCommand("TestUser", message);
-                    }
-                }
-            }
-            else
-            {
-                while (true)
-                {
-                    string message = irc.readMessage();
-                    if (message == null || message.Length == 0) continue;
-
-                    Console.WriteLine(message);
-
-                    if (message.IndexOf("!") >= 0) handleChatMessage(message);
-                    else if (message.StartsWith("PING")) irc.sendIrcMessage("PONG");
-                }
+                if (message.IndexOf("!") >= 0) handleChatMessage(message);
+                else if (message.StartsWith("PING")) irc.sendIrcMessage("PONG");
             }
         }
 
@@ -127,7 +118,7 @@ namespace TwitchBotApp
         {
             Regex r = new Regex(@"^!\w+");
             string returnMessage = ComManager.RunCommand(r.Match(message).Value, message);
-            irc.sentChatMessage(returnMessage);
+            irc.sendChatMessage(returnMessage);
             UpdateChatDisplay("MrSheila", returnMessage, Colors.Blue);
         }
 
@@ -162,7 +153,7 @@ namespace TwitchBotApp
         private void SendMessageFromApp()
         {
             string message = txtSend.Text;
-            irc.sentChatMessage(message);
+            irc.sendChatMessage(message);
             UpdateChatDisplay("MrSheila", message, Colors.Blue);
             txtSend.Clear();
         }
@@ -208,6 +199,24 @@ namespace TwitchBotApp
                 return result;
             }
 
+        }
+
+        private void btnConsoleSend_Click(object sender, RoutedEventArgs e)
+        {
+            WriteToStreamAsInput();
+        }
+
+        private void txtConsole_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) WriteToStreamAsInput();
+        }
+
+        private void WriteToStreamAsInput()
+        {
+            string message = txtConsole.Text;
+            irc.Input(irc.GenerateChatMessage("VoxDavis", message));
+            //testWriter.WriteLine(irc.GenerateChatMessage("VoxDavis", message));
+            txtConsole.Clear();
         }
     }
 }
