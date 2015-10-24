@@ -87,6 +87,8 @@ namespace TwitchBotApp
 
                 if (message.Username != null && message.Text.Length > 0) handleChatMessage(message);
                 else if (message.Text.StartsWith("PING")) irc.SendIrcMessage("PONG");
+
+                Console.WriteLine(incoming);
             }
         }
 
@@ -94,10 +96,10 @@ namespace TwitchBotApp
         {
             UpdateChatDisplay(message, Colors.Red);
             showNotification(message);
-            if (message.Text[0] == '!')
-            {
-                handleCommand(message);
-            }
+
+            if (message.isJoin) irc.SendChatMessage("Welcome, " + message.Username + "!");
+            else if (message.isLeave) irc.SendChatMessage("Bye, " + message.Username + "!");
+            else if (message.Text[0] == '!') handleCommand(message);
         }
 
         /// <summary>
@@ -140,13 +142,22 @@ namespace TwitchBotApp
 
             if (message.Username != null)
             {
-                Run runUsername = new Run(message.Username + ": ");
-                runUsername.Foreground = new SolidColorBrush(color);
 
-                Run runMessage = new Run(message.Text);
+                if(message.isJoin || message.isLeave)
+                {
+                    Bold boldMessage = new Bold(new Run(message.Text));
+                    para.Inlines.Add(boldMessage);
+                }
+                else
+                {
+                    Run runUsername = new Run(message.Username + ": ");
+                    runUsername.Foreground = new SolidColorBrush(color);
 
-                para.Inlines.Add(runUsername);
-                para.Inlines.Add(runMessage);
+                    Run runMessage = new Run(message.Text);
+
+                    para.Inlines.Add(runUsername);
+                    para.Inlines.Add(runMessage);
+                }
             }
             else
             {

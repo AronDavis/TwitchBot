@@ -35,6 +35,10 @@ namespace TwitchBot
             outputStream.WriteLine("NICK " + username);
             outputStream.WriteLine("USER " + username + " 8 *:" + username);
             outputStream.Flush();
+
+            outputStream.WriteLine("CAP REQ :twitch.tv/membership");
+            outputStream.Flush();
+
         }
 
         /// <summary>
@@ -51,6 +55,12 @@ namespace TwitchBot
             //assume we're only working with one channel for now
             this.channel = channel;
             outputStream.WriteLine("JOIN #" + channel);
+            outputStream.Flush();
+        }
+
+        public void RequestNames()
+        {
+            outputStream.WriteLine("NAMES #" + channel);
             outputStream.Flush();
         }
 
