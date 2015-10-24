@@ -13,7 +13,7 @@ namespace TwitchBot
         {
             if(incoming.IndexOf("!") >= 0) Username = incoming.Substring(1, incoming.IndexOf("!") - 1);
 
-            if (incoming.StartsWith("PING")) Text = PING;
+            if (incoming.StartsWith("PING")) Text = "PING";
             else Text = incoming.Substring(incoming.IndexOf(" :") + 2);
         }
 
