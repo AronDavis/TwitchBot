@@ -2,9 +2,9 @@
 MrSheila!
 
 
-Make sure to add an App.config file with an oauth key like so:
+Make sure to add an `App.config` file with an OAuth key like so:
 
-```
+```xml
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
     <startup> 
@@ -12,7 +12,7 @@ Make sure to add an App.config file with an oauth key like so:
     </startup>
 
   <appSettings>
-    <add key="oauth" value="YOUR_PASSWORD_HERE"/>
+    <add key="oauth" value="OAUTH_TOKEN_HERE"/>
   </appSettings>
 </configuration>
 ```
