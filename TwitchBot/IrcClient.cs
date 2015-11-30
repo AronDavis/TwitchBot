@@ -33,7 +33,7 @@ namespace TwitchBot
             //connects to server, but not any specific channel yet
             outputStream.WriteLine("PASS " + password);
             outputStream.WriteLine("NICK " + username);
-            outputStream.WriteLine("USER " + username + " 8 *:" + username);
+            outputStream.WriteLine("USER " + username + " 0 *:" + username);
             outputStream.Flush();
 
             outputStream.WriteLine("CAP REQ :twitch.tv/membership");

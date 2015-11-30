@@ -83,12 +83,11 @@ namespace TwitchBotApp
                 string incoming = irc.ReadMessage();
                 if (incoming == null || incoming.Length == 0) continue;
 
+                Console.WriteLine(incoming);
                 Message message = new Message(incoming);
 
                 if (message.Username != null && message.Text.Length > 0) handleChatMessage(message);
                 else if (message.Text.StartsWith("PING")) irc.SendIrcMessage("PONG");
-
-                Console.WriteLine(incoming);
             }
         }
 
@@ -98,7 +97,7 @@ namespace TwitchBotApp
             showNotification(message);
 
             if (message.isJoin) irc.SendChatMessage("Welcome, " + message.Username + "!");
-            else if (message.isLeave) irc.SendChatMessage("Bye, " + message.Username + "!");
+            else if (message.isLeave) return; //irc.SendChatMessage("Bye, " + message.Username + "!");
             else if (message.Text[0] == '!') handleCommand(message);
         }
 
