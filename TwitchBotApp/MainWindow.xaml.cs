@@ -36,26 +36,32 @@ namespace TwitchBotApp
         }
 
         private static bool _testMode = true;
-        private static IrcClient irc;
-        private static Notification notification;
+        private static IrcClient _irc;
+        private static Notification _notification;
+        private string _username;
 
         private void Main_Loaded(object sender, RoutedEventArgs e)
         {
             txtChat.Document.Blocks.Clear();
-            Thread mainThread = new Thread(new ThreadStart(RunMain));
+            Thread mainThread = new Thread(new ThreadStart(_runMain));
             mainThread.Start();
         }
 
-        void RunMain()
+        private void _runMain()
         {
             bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
+            _username = ConfigurationManager.AppSettings["username"];
             string password = ConfigurationManager.AppSettings["oauth"];
 
-            if (_testMode) irc = new IrcClient();
-            else irc = new IrcClient("irc.twitch.tv", 6667, "mrsheila", password); //password from www.twitchapps.com/tmi
+            string channel = ConfigurationManager.AppSettings["channel"];
+
+            if (_testMode)
+                _irc = new IrcClient();
+            else
+                _irc = new IrcClient("irc.twitch.tv", 6667, _username, password); //password from www.twitchapps.com/tmi
 
             //join channel
-            irc.JoinRoom("voxdavis");
+            _irc.JoinRoom(channel);
 
             //Add commands
             ComManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
@@ -77,28 +83,46 @@ namespace TwitchBotApp
             });
             ComManager.AddCommand("!source", "Gets a link to the source code!", (message) => { return @"https://github.com/AronDavis/TwitchBot"; });
 
-
             while (true)
             {
-                string incoming = irc.ReadMessage();
-                if (incoming == null || incoming.Length == 0) continue;
+                string incoming = _irc.ReadMessage();
+                if (incoming == null || incoming.Length == 0)
+                    continue;
 
                 Console.WriteLine(incoming);
                 Message message = new Message(incoming);
 
-                if (message.Username != null && message.Text.Length > 0) handleChatMessage(message);
-                else if (message.Text.StartsWith("PING")) irc.SendIrcMessage("PONG");
+                switch(message.MessageType)
+                {
+                    case MessageTypeEnum.Unknown:
+                        UpdateChatDisplay(message, Colors.Red, Colors.Black);
+                        break;
+                    case MessageTypeEnum.Welcome:
+                    case MessageTypeEnum.YourHost:
+                    case MessageTypeEnum.Created:
+                    case MessageTypeEnum.MyInfo:
+                    case MessageTypeEnum.MessageOfTheDay:
+                    case MessageTypeEnum.Capability:
+                        UpdateChatDisplay(message, Colors.Black, Colors.White);
+                        break;
+                    case MessageTypeEnum.Join:
+                        UpdateChatDisplay(message, Colors.Black, Colors.White);
+                        _irc.SendChatMessage($"Welcome, {message.Username}!");
+                        break;
+                    case MessageTypeEnum.Part:
+                        UpdateChatDisplay(message, Colors.Black, Colors.White);
+                        break;
+                    case MessageTypeEnum.PrivateMessage:
+                        UpdateChatDisplay(message, Colors.Red, Colors.White);
+                        _showNotification(message);
+
+                        _handleCommand(message);
+                        break;
+                    case MessageTypeEnum.Ping:
+                        _irc.SendIrcMessage("PONG");
+                        break;
+                }
             }
-        }
-
-        private void handleChatMessage(Message message)
-        {
-            UpdateChatDisplay(message, Colors.Red);
-            showNotification(message);
-
-            if (message.isJoin) irc.SendChatMessage("Welcome, " + message.Username + "!");
-            else if (message.isLeave) return; //irc.SendChatMessage("Bye, " + message.Username + "!");
-            else if (message.Text[0] == '!') handleCommand(message);
         }
 
         /// <summary>
@@ -106,34 +130,34 @@ namespace TwitchBotApp
         /// </summary>
         /// <param name="username"></param>
         /// <param name="message"></param>
-        private void handleCommand(Message message)
+        private void _handleCommand(Message message)
         {
             Regex r = new Regex(@"^!\w+");
             string returnMessage = ComManager.RunCommand(r.Match(message.Text).Value, message.Text);
 
             if (!String.IsNullOrEmpty(returnMessage))
             {
-                irc.SendChatMessage(returnMessage);
+                _irc.SendChatMessage(returnMessage);
 
-                UpdateChatDisplay(new Message(irc.GenerateChatMessage("MrSheila", returnMessage)), Colors.Blue);
+                UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, returnMessage)), Colors.Blue, Colors.White);
             }
         }
 
-        public void UpdateChatDisplay(Message message, Color color)
+        public void UpdateChatDisplay(Message message, Color foregroundColor, Color backgroundColor)
         {
             if (txtChat.Dispatcher.CheckAccess())
             {
                 // Add  paragraph
-                txtChat.Document.Blocks.Add(MessageToParagraph(message, color));
+                txtChat.Document.Blocks.Add(MessageToParagraph(message, foregroundColor, backgroundColor));
                 txtChat.ScrollToEnd();
             }
             else
             {
-                txtChat.Dispatcher.Invoke(() => UpdateChatDisplay(message, color));
+                txtChat.Dispatcher.Invoke(() => UpdateChatDisplay(message, foregroundColor, backgroundColor));
             }
         }
 
-        public Paragraph MessageToParagraph(Message message, Color color)
+        public Paragraph MessageToParagraph(Message message, Color foregroundColor, Color backgroundColor)
         {
             // Create a paragraph with text
             Paragraph para = new Paragraph();
@@ -142,20 +166,23 @@ namespace TwitchBotApp
             if (message.Username != null)
             {
 
-                if(message.isJoin || message.isLeave)
+                if(message.MessageType == MessageTypeEnum.PrivateMessage)
                 {
-                    Bold boldMessage = new Bold(new Run(message.Text));
-                    para.Inlines.Add(boldMessage);
-                }
-                else
-                {
-                    Run runUsername = new Run(message.Username + ": ");
-                    runUsername.Foreground = new SolidColorBrush(color);
+                    Run runUsername = new Run($"{message.Username}: ");
+                    runUsername.Foreground = new SolidColorBrush(foregroundColor);
+                    runUsername.Background = new SolidColorBrush(backgroundColor);
 
                     Run runMessage = new Run(message.Text);
 
                     para.Inlines.Add(runUsername);
                     para.Inlines.Add(runMessage);
+                }
+                else
+                {
+                    Bold boldMessage = new Bold(new Run(message.Text));
+                    boldMessage.Foreground = new SolidColorBrush(foregroundColor);
+                    boldMessage.Background = new SolidColorBrush(backgroundColor);
+                    para.Inlines.Add(boldMessage);
                 }
             }
             else
@@ -167,39 +194,41 @@ namespace TwitchBotApp
             return para;
         }
 
-        private void SendMessageFromApp() //TODO: as bot
+        private void _sendMessageFromApp() //TODO: as bot
         {
             string message = txtSend.Text;
-            irc.SendChatMessage(message);
+            _irc.SendChatMessage(message);
 
-            UpdateChatDisplay(new Message(irc.GenerateChatMessage("MrSheila", message)), Colors.Blue);
+            UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, message)), Colors.Blue, Colors.White);
             txtSend.Clear();
         }
 
-        private void btnSend_Click(object sender, RoutedEventArgs e)
+        private void _btnSendClick(object sender, RoutedEventArgs e)
         {
-            SendMessageFromApp();
+            _sendMessageFromApp();
         }
 
-        private void txtSend_KeyDown(object sender, KeyEventArgs e)
+        private void _txtSendKeyDown(object sender, KeyEventArgs e)
         {
-            if(e.Key == Key.Enter) SendMessageFromApp();
+            if(e.Key == Key.Enter)
+                _sendMessageFromApp();
         }
 
-        private void showNotification(Message message)
+        private void _showNotification(Message message)
         {
             if (Application.Current.Dispatcher.CheckAccess())
             {
                 if (IsWindowOpen<Notification>())
                 {
-                    notification.AppendMessage(MessageToParagraph(message, Colors.Red));
-                    notification.lblTitle.Content = "Message received at " + DateTime.Now.ToShortTimeString();
+                    _notification.AppendMessage(MessageToParagraph(message, Colors.Red, Colors.White));
+                    _notification.lblTitle.Content = "Message received at " + DateTime.Now.ToShortTimeString();
                 }
-                else notification = new Notification("Message received at " + DateTime.Now.ToShortTimeString(), MessageToParagraph(message, Colors.Red));
+                else
+                    _notification = new Notification("Message received at " + DateTime.Now.ToShortTimeString(), MessageToParagraph(message, Colors.Red, Colors.White));
 
-                notification.Show();
+                _notification.Show();
             }
-            else Application.Current.Dispatcher.Invoke(() => showNotification(message));
+            else Application.Current.Dispatcher.Invoke(() => _showNotification(message));
         }
 
         public static bool IsWindowOpen<T>(string name = null) where T : Window
@@ -219,20 +248,21 @@ namespace TwitchBotApp
 
         }
 
-        private void btnConsoleSend_Click(object sender, RoutedEventArgs e)
+        private void _btnConsoleSendClick(object sender, RoutedEventArgs e)
         {
             WriteToStreamAsInput();
         }
 
-        private void txtConsole_KeyDown(object sender, KeyEventArgs e)
+        private void _txtConsoleKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter) WriteToStreamAsInput();
+            if (e.Key == Key.Enter)
+                WriteToStreamAsInput();
         }
 
-        private void WriteToStreamAsInput()
+        private void WriteToStreamAsInput() //TODO: twitch IRC changes made this a duplicate function...
         {
             string message = txtConsole.Text;
-            irc.ConsoleInput(irc.GenerateChatMessage("VoxDavis", message));
+            _irc.ConsoleInput(_irc.GenerateChatMessage(_username, message));
             txtConsole.Clear();
         }
     }
