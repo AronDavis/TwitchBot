@@ -42,7 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommandManagerPackage\Command.cs" />
-    <Compile Include="CommandManagerPackage\CommandManager.cs" />
+    <Compile Include="CommandManagerPackage\BotCommandManager.cs" />
     <Compile Include="IrcClient.cs" />
     <Compile Include="Message.cs" />
     <Compile Include="MessageTypeEnum.cs" />

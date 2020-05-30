@@ -1,27 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Configuration;
 using System.Text.RegularExpressions;
 using System.Threading;
 
 using TwitchBot;
-using TwitchBot.CommandManagerPackage;
-using ComManager = TwitchBot.CommandManagerPackage.CommandManager;
 using NameGeneratorPackage;
-using System.IO;
-using System.Diagnostics;
+using TwitchBot.CommandManagerPackage;
 
 namespace TwitchBotApp
 {
@@ -30,25 +19,17 @@ namespace TwitchBotApp
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
-
-        private static bool _testMode = true;
-        private static IrcClient _irc;
-        private static Notification _notification;
+        private bool _testMode = true;
+        private IrcClient _irc;
+        private Notification _notification;
         private string _username;
 
-        private void Main_Loaded(object sender, RoutedEventArgs e)
-        {
-            txtChat.Document.Blocks.Clear();
-            Thread mainThread = new Thread(new ThreadStart(_runMain));
-            mainThread.Start();
-        }
+        private BotCommandManager _commandManager;
 
-        private void _runMain()
+        public MainWindow()
         {
+            _commandManager = new BotCommandManager();
+
             bool.TryParse(ConfigurationManager.AppSettings["testmode"], out _testMode);
             _username = ConfigurationManager.AppSettings["username"];
             string password = ConfigurationManager.AppSettings["oauth"];
@@ -64,25 +45,57 @@ namespace TwitchBotApp
             _irc.JoinRoom(channel);
 
             //Add commands
-            ComManager.AddCommand("!hype", "Used to generate hype!", (message) => { return "HYPE HYPE HYPE!!!!"; });
-            ComManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) =>
+            _commandManager.AddCommand("!hype", "Used to generate hype!", (message) =>
+            {
+                string returnMessage = "HYPE HYPE HYPE!!!!";
+                _irc.SendChatMessage(returnMessage);
+
+                UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, returnMessage)), Colors.Blue, Colors.White);
+            });
+            _commandManager.AddCommand("!name", "Used to generate a random name.  Give a username afterwards to assign it to someone.", (message) =>
             {
                 Regex r = new Regex(@"!name @[\w_\-]+");
                 NameGenerator ng = new NameGenerator();
 
+                string returnMessage = null;
                 if (r.IsMatch(message))
                 {
                     string u = message.Substring(7);
-                    return u + "'s new name is " + ng.GetName();
+                    returnMessage = u + "'s new name is " + ng.GetName();
                 }
                 else
                 {
-                    return ng.GetName();
+                    returnMessage = ng.GetName();
                 }
 
-            });
-            ComManager.AddCommand("!source", "Gets a link to the source code!", (message) => { return @"https://github.com/AronDavis/TwitchBot"; });
 
+                _irc.SendChatMessage(returnMessage);
+
+                UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, returnMessage)), Colors.Blue, Colors.White);
+            });
+
+            _commandManager.AddCommand("!source", "Gets a link to the source code!", (message) =>
+            {
+                string returnMessage = @"https://github.com/AronDavis/TwitchBot";
+
+                _irc.SendChatMessage(returnMessage);
+
+                UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, returnMessage)), Colors.Blue, Colors.White);
+            });
+
+            InitializeComponent();
+        }
+
+        private void Main_Loaded(object sender, RoutedEventArgs e)
+        {
+            txtChat.Document.Blocks.Clear();
+
+            Thread mainThread = new Thread(new ThreadStart(_runMain));
+            mainThread.Start();
+        }
+
+        private void _runMain()
+        {
             while (true)
             {
                 string incoming = _irc.ReadMessage();
@@ -133,14 +146,7 @@ namespace TwitchBotApp
         private void _handleCommand(Message message)
         {
             Regex r = new Regex(@"^!\w+");
-            string returnMessage = ComManager.RunCommand(r.Match(message.Text).Value, message.Text);
-
-            if (!String.IsNullOrEmpty(returnMessage))
-            {
-                _irc.SendChatMessage(returnMessage);
-
-                UpdateChatDisplay(new Message(_irc.GenerateChatMessage(_username, returnMessage)), Colors.Blue, Colors.White);
-            }
+            _commandManager.RunCommand(r.Match(message.Text).Value, message.Text);
         }
 
         public void UpdateChatDisplay(Message message, Color foregroundColor, Color backgroundColor)
